@@ -65,6 +65,9 @@ def get_data(path):
             i = i+1
             
         table_3_float = table_3.astype(float)
+
+    os.remove('m-q-5-31_ch2_output.txt')
+    os.remove('m-q-5-31_ch3_output.txt')
     
     return table_2_float, table_3_float
 
