@@ -1,30 +1,73 @@
 import numpy as np
 import math
 import matplotlib.pyplot as plt
+import pyvisa as visa
+import os
+import serial
+import time
+from scipy import stats
+import re
 
-def import_data(file_name):
+def get_data(path):
     
-    with open(file_name, 'r', newline='\n') as file:
+    rm = visa.ResourceManager(path)
+    addy = rm.list_resources()
+    address = "".join(str(x) for x in addy)
+    
+    gpib = rm.open_resource(address)
+    gpib.timeout = 100000
+    gpib.clear()
+    
+    channel_2 = gpib.query('C2:INSPECT? "SIMPLE"')
+    channel_3 = gpib.query('C3:INSPECT? "SIMPLE"')
+    
+    with open('m-q-5-31_ch2_output.txt', 'w') as output1:
+        output1.write(channel_2)
+    
+    with open('m-q-5-31_ch3_output.txt', 'w') as output2:
+        output2.write(channel_3)
         
-        lines = file.readlines()
-        j = len(lines)
-        table = np.linspace(0,1,(j-2)*6)
+    
+    with open('m-q-5-31_ch2_output.txt', 'r',newline='\n') as file1:
+        lines_2 = file1.readlines()
+        j = len(lines_2)
+        table_2 = np.linspace(0,1,(j-2)*6)
         i = 0
         
-        for line in lines:
+        for line in lines_2:
             data = np.fromstring(line, sep=' ')
             if((i>0) & (i<334)):
-                table[(i-1)*6] = data[0]
-                table[(i-1)*6+1] = data[1]
-                table[(i-1)*6+2] = data[2]
-                table[(i-1)*6+3] = data[3]
-                table[(i-1)*6+4] = data[4]
-                table[(i-1)*6+5] = data[5]
+                table_2[(i-1)*6] = data[0]
+                table_2[(i-1)*6+1] = data[1]
+                table_2[(i-1)*6+2] = data[2]
+                table_2[(i-1)*6+3] = data[3]
+                table_2[(i-1)*6+4] = data[4]
+                table_2[(i-1)*6+5] = data[5]
             i = i+1
             
-        table_float = table.astype(float)
+        table_2_float = table_2.astype(float)
         
-    return table_float
+    with open('m-q-5-31_ch3_output.txt', 'r',newline='\n') as file2:
+        lines_3 = file2.readlines()
+        j = len(lines_3)
+        table_3 = np.linspace(0,1,(j-2)*6)
+        i = 0
+        
+        for line in lines_3:
+            data = np.fromstring(line, sep=' ')
+            if((i>0) & (i<334)):
+                table_3[(i-1)*6] = data[0]
+                table_3[(i-1)*6+1] = data[1]
+                table_3[(i-1)*6+2] = data[2]
+                table_3[(i-1)*6+3] = data[3]
+                table_3[(i-1)*6+4] = data[4]
+                table_3[(i-1)*6+5] = data[5]
+            i = i+1
+            
+        table_3_float = table_3.astype(float)
+    
+    return table_2_float, table_3_float
+
 
 def adjust_data(data):
     
