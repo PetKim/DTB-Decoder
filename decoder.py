@@ -358,3 +358,51 @@ def adc(stream):
     adc = np.reshape(adc_output_np, ( -1 , 1))
     
     return adc
+
+
+def command_prompt(command, stream1, stream2, adc1, adc2):
+    
+    if command == 'raw1':
+        print(stream1)
+        
+    if command == 'raw2':
+        print(stream2)
+        
+    if command == 'fullraw':
+        print(stream1)
+        print(stream2)
+        
+    if command == 'adc1':
+        print(adc1)
+        
+    if command == 'adc2':
+        print(adc2)
+        
+    if command == 'fulladc':
+        print(adc1)
+        print(adc2)
+        
+    if command == 'commands':
+        print('raw1, raw2, fullraw, adc1, adc2, fulladc')
+        
+    if (command != 'raw1') or (command != 'raw2') or (command != 'fullraw') or (command != 'adc1') or (command != 'adc2') or (command != 'fulladc') or (command != 'commands'):
+        print('Invalid command. For list of commands, enter "commands"')
+
+
+def main():
+    #file_path = input('Enter file path to GPIB: ')
+    data1, data2 = get_data('C:\\Windows\\System32\\visa32.dll')
+    y1 = adjust_data(data1)
+    y2 = adjust_data(data2)
+    z = get_bit_stream(y1, y2)
+    z_fix = raw_bit_stream(z)
+    z_convert = convert_raw(z_fix)
+    z_nrzi = nrzi_deconverter(z_convert)
+    z_1, z_2 = four_bin_splitter(z_nrzi)
+    adc1 = adc(z_1)
+    adc2 = adc(z_2)
+    command = input('Enter command: ')
+    command_prompt(command, z_1, z_2, adc1, adc2)
+    
+if __name__ == "__main__":
+    main()
