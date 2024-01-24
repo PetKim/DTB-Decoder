@@ -8,6 +8,8 @@ import time
 from scipy import stats
 import re
 
+# This part you do not need to change anything as all it's doing is pulling the data from the oscilloscope
+# If anything you need to only change the channels that are inspected
 def get_data(path):
     
     rm = visa.ResourceManager(path)
@@ -27,7 +29,8 @@ def get_data(path):
     with open('m-q-5-31_ch3_output.txt', 'w') as output2:
         output2.write(channel_3)
         
-    
+
+    # This part does not need to be worried about. It is only removing unnecessary parts of the file created
     with open('m-q-5-31_ch2_output.txt', 'r',newline='\n') as file1:
         lines_2 = file1.readlines()
         j = len(lines_2)
@@ -66,12 +69,14 @@ def get_data(path):
             
         table_3_float = table_3.astype(float)
 
+    # We no longer require these files so they get deleted
     os.remove('m-q-5-31_ch2_output.txt')
     os.remove('m-q-5-31_ch3_output.txt')
     
     return table_2_float, table_3_float
 
 
+# Removing outliers in data
 def adjust_data(data):
     
     trim = []
@@ -82,6 +87,9 @@ def adjust_data(data):
             
     return trim
 
+
+# Sums the data from the two channels and sets the bit values
+# Here the values of the voltage readings corresponds to bit values
 def get_bit_stream(data1, data2):
     
     data1np = np.array(data1)
@@ -99,31 +107,38 @@ def get_bit_stream(data1, data2):
     return data_sum
 
 
+# Sorts out the array from above to find where the bits stream starts
 def raw_bit_stream(bit_stream):
-    
+
+    # Locates the start of the first string of raw bits
     for i in range(len(bit_stream)-5):
         if ((bit_stream[i] == 1) and (bit_stream[i+1] == 1) and (bit_stream[i+2] == 1) and (bit_stream[i+3] == 1) and (bit_stream[i+4] == 1) and (bit_stream[i+5] == 0)) or ((bit_stream[i] == 0) and (bit_stream[i+1] == 0) and (bit_stream[i+2] == 0) and (bit_stream[i+3] == 0) and (bit_stream[i+4] == 0) and (bit_stream[i+5] == 1)):
             fix = bit_stream[i:]
             break
-            
+
+    # Trims the length of the bit array to be divisible to 5
     length = len(fix)
     for i in range(length):
         if length % 5 != 0:
             length = length - 1
         elif length % 5 == 0:
             fix_l = fix[:length]
-            
+
+    # Reshapes the long array into a 2-D array where each row is 5 values long
     fix_np = np.array(fix_l)
     five_str = np.reshape(fix_np, (-1, 5))
     
     return five_str
 
 
+# Each row of 1's or 0's corresponds to a binary value
+# So each row of the array is converted to equal 1 or 0
 def convert_raw(raw_bit):
     
     raw_bit_sum = np.sum(raw_bit, axis = 1)
     bin_stream = (raw_bit_sum > 0)*1 + (raw_bit_sum < 0)*0
-    
+
+    # Locates the proper start position of binary values
     for i in range(len(bin_stream)):
         if ((bin_stream[i] == 1) and (bin_stream[i+1] == 1) and (bin_stream[i+2] == 1) and (bin_stream[i+3] == 1) and (bin_stream[i+4] == 1)) or ((bin_stream[i] == 0) and (bin_stream[i+1] == 0) and (bin_stream[i+2] == 0) and (bin_stream[i+3] == 0) and (bin_stream[i+4] == 0)):
             adj_bin_stream = bin_stream[i:]
@@ -135,13 +150,14 @@ def convert_raw(raw_bit):
             length = length - 1
         elif length % 5 == 0:
             final_bin_stream = adj_bin_stream[:length]
-            
+
     five_bin_stream_np = np.reshape(final_bin_stream, (-1, 5))
     five_bin_stream = np.array(five_bin_stream_np).tolist()
     
     return five_bin_stream
 
 
+# Deconverts each row to its corresponding 4 binary value
 def nrzi_deconverter(five_bin):
     
     four_bin = []
@@ -221,6 +237,7 @@ def nrzi_deconverter(five_bin):
     return four_bin_np
 
 
+# Separates out the new array into its two converted data stream
 def four_bin_splitter(four_bin):
     
     data_str_1 = []
@@ -360,6 +377,7 @@ def adc(stream):
     return adc
 
 
+# Primitive function for user input
 def command_prompt(command, stream1, stream2, adc1, adc2):
     
     if command == 'raw1':
